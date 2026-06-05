@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>IronLog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --red:#E24B4A;--red2:#A32D2D;--red-bg:#FCEBEB;--red-text:#7a1f1f;
+  --bg:#ffffff;--bg2:#f7f6f3;--bg3:#f0ede8;
+  --t1:#1a1a1a;--t2:#6b6760;--t3:#9e9b96;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --rad:14px;--rad-sm:9px;--shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#151514;--bg2:#1e1d1b;--bg3:#242320;
+  --t1:#f0ede8;--t2:#9e9b96;--t3:#6b6760;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --red-bg:#2d1212;--red-text:#f09595;
+}}
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.5}
+#root{max-width:480px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg)}
+
+/* AUTH */
+#auth-screen{display:flex;flex-direction:column;min-height:100vh;padding:40px 24px 32px}
+.auth-logo{font-family:'Bebas Neue',sans-serif;font-size:52px;color:var(--red);letter-spacing:2px;margin-bottom:4px}
+.auth-tagline{font-size:13px;color:var(--t2);margin-bottom:48px}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:var(--rad-sm);padding:3px;margin-bottom:28px}
+.auth-tab{flex:1;padding:9px;font-size:14px;border:none;background:none;border-radius:7px;cursor:pointer;color:var(--t2);font-family:'DM Sans',sans-serif;transition:all .15s}
+.auth-tab.active{background:var(--bg);color:var(--t1);font-weight:600;box-shadow:var(--shadow)}
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:var(--t2);letter-spacing:.03em;text-transform:uppercase;margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rad-sm);padding:13px 14px;font-size:15px;color:var(--t1);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.form-input:focus{border-color:var(--red)}
+.form-input::placeholder{color:var(--t3)}
+.btn-auth{width:100%;background:var(--red);color:#fff;border:none;border-radius:var(--rad-sm);padding:15px;font-size:16px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;transition:opacity .15s}
+.btn-auth:hover{opacity:.9}
+.btn-auth:disabled{opacity:.5;cursor:not-allowed}
+.auth-error{background:var(--red-bg);color:var(--red-text);border-radius:var(--rad-sm);padding:11px 14px;font-size:13px;margin-bottom:14px;display:none}
+.auth-error.show{display:block}
+
+/* APP SHELL */
+#app-screen{display:none;flex-direction:column;min-height:100vh}
+#app-screen.visible{display:flex}
+.app-content{flex:1;overflow-y:auto;padding:0 0 80px}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0}
+.topbar-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--red);letter-spacing:1px}
+.topbar-user{display:flex;align-items:center;gap:8px}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--red);cursor:pointer}
+
+/* NAV */
+.bottom-nav{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;font-weight:500;color:var(--t3);background:none;border:none;cursor:pointer;transition:color .15s;font-family:'DM Sans',sans-serif;letter-spacing:.02em}
+.nav-btn.active{color:var(--red)}
+.nav-icon{font-size:22px;line-height:1}
+
+/* PAGES */
+.page{display:none;padding:20px}
+.page.active{display:block}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:1px;line-height:1;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--t2);margin-bottom:20px}
+
+/* CARDS */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:16px;margin-bottom:10px}
+.card-sm{padding:12px 14px}
+
+/* TODAY HERO */
+.hero-card{background:var(--red);border-radius:var(--rad);padding:22px;margin-bottom:20px;cursor:pointer;position:relative;overflow:hidden}
+.hero-card::before{content:'';position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.06)}
+.hero-eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,0.65);margin-bottom:8px}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;color:#fff;line-height:1;margin-bottom:4px}
+.hero-meta{font-size:13px;color:rgba(255,255,255,0.75);margin-bottom:18px}
+.hero-btn{background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.25);color:#fff;padding:10px 18px;border-radius:var(--rad-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* WEEK STRIP */
+.week-strip{display:flex;gap:6px;margin-bottom:20px}
+.week-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px}
+.week-day-label{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.week-day-dot{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;border:1px solid var(--border)}
+.week-day-dot.is-today{background:var(--red);color:#fff;border-color:var(--red)}
+.week-day-dot.is-done{background:var(--red-bg);color:var(--red);border-color:transparent}
+.week-day-dot.is-rest{color:var(--t3)}
+
+/* SECTION HEADER */
+.sec-hdr{font-size:11px;font-weight:600;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin:20px 0 10px}
+
+/* LOG ITEMS */
+.log-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.log-row:last-child{border-bottom:none}
+.log-icon-wrap{width:38px;height:38px;border-radius:var(--rad-sm);background:var(--red-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.log-name{font-size:14px;font-weight:600}
+.log-meta{font-size:12px;color:var(--t2);margin-top:1px}
+.log-vol{font-size:13px;font-weight:600;color:var(--red);white-space:nowrap}
+
+/* SESSION PICKER */
+.session-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.session-tile{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:16px;cursor:pointer;transition:border-color .15s,transform .1s}
+.session-tile:hover{border-color:var(--border2)}
+.session-tile:active{transform:scale(.98)}
+.session-tile.suggested{border-color:var(--red);border-width:2px}
+.session-badge{font-size:10px;font-weight:700;background:var(--red);color:#fff;padding:3px 8px;border-radius:99px;letter-spacing:.04em;display:inline-block;margin-bottom:8px}
+.session-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;margin-bottom:2px}
+.session-meta{font-size:12px;color:var(--t2)}
+
+/* EXERCISE LIST PREVIEW */
+.ex-preview-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
+.ex-preview-row:last-child{border-bottom:none}
+.ex-preview-last{color:var(--t3);font-size:12px}
+
+/* ACTIVE WORKOUT */
+.workout-bar{background:var(--red);padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.workout-bar-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff}
+.workout-timer{font-size:22px;font-weight:600;color:#fff;font-variant-numeric:tabular-nums}
+.workout-cancel{background:rgba(255,255,255,0.18);border:none;color:#fff;padding:7px 12px;border-radius:var(--rad-sm);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+.ex-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:16px;margin-bottom:10px}
+.ex-title{font-size:15px;font-weight:600;margin-bottom:12px}
+.sets-grid{display:grid;grid-template-columns:26px 1fr 1fr 32px;gap:6px;align-items:center}
+.sets-hdr{font-size:11px;font-weight:600;color:var(--t3);text-align:center;letter-spacing:.03em;text-transform:uppercase}
+.set-num{font-size:12px;font-weight:600;color:var(--t3);text-align:center}
+.set-input{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad-sm);padding:9px 4px;font-size:14px;text-align:center;color:var(--t1);width:100%;font-family:'DM Sans',sans-serif;outline:none}
+.set-input:focus{border-color:var(--red)}
+.set-check{width:30px;height:30px;border-radius:50%;border:1px solid var(--border2);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--t3);justify-self:center;transition:all .15s}
+.set-check.done{background:var(--red);border-color:var(--red);color:#fff}
+.last-used{font-size:11px;color:var(--t3);margin-top:10px;padding-top:8px;border-top:1px solid var(--border)}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.stat-card{background:var(--bg2);border-radius:var(--rad-sm);padding:14px}
+.stat-lbl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:.5px;line-height:1}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:3px}
+
+/* BAR CHART */
+.bar-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:16px;margin-bottom:12px}
+.bar-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em}
+.bars{display:flex;align-items:flex-end;gap:4px;height:72px}
+.b-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.b-bar{width:100%;border-radius:3px 3px 0 0;background:var(--red);opacity:.6;min-height:3px}
+.b-bar.today{opacity:1}
+.b-lbl{font-size:10px;color:var(--t3);font-weight:500}
+
+/* PR CARD */
+.pr-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:14px;margin-bottom:8px}
+.pr-name{font-size:14px;font-weight:600;margin-bottom:3px}
+.pr-badge{float:right;background:#FAEEDA;color:#854F0B;font-size:11px;font-weight:600;padding:3px 9px;border-radius:99px}
+.pr-meta{font-size:12px;color:var(--t2)}
+
+/* PLANS */
+.plan-card{cursor:pointer;transition:border-color .15s}
+.plan-card.is-active{border-color:var(--red);border-width:2px}
+.plan-name{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:.5px;margin-bottom:2px}
+.plan-freq{font-size:13px;color:var(--t2);margin-bottom:10px}
+.plan-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.plan-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--bg2);color:var(--t2)}
+.plan-pill.rest{opacity:.45}
+.plan-day-detail{margin-top:4px}
+.plan-day-name{font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px;margin-top:8px}
+.plan-exs{font-size:12px;color:var(--t2);line-height:1.6}
+
+/* PROFILE */
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:var(--red-bg);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--red);margin-bottom:12px}
+.btn-outline{background:none;border:1px solid var(--border2);border-radius:var(--rad-sm);padding:11px 16px;font-size:14px;font-weight:600;color:var(--t1);cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;text-align:left;margin-bottom:8px;transition:background .15s}
+.btn-outline:hover{background:var(--bg2)}
+.btn-danger{color:var(--red);border-color:rgba(226,75,74,.3)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.overlay.hidden{display:none}
+.modal{background:var(--bg);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:.5px;margin-bottom:16px}
+
+/* BUTTONS */
+.btn-primary{background:var(--red);color:#fff;border:none;border-radius:var(--rad-sm);padding:15px 20px;font-size:15px;font-weight:600;cursor:pointer;width:100%;font-family:'DM Sans',sans-serif;transition:opacity .15s}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:var(--bg2);color:var(--t1);border:1px solid var(--border2);border-radius:var(--rad-sm);padding:12px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-row{display:flex;gap:8px;margin-top:12px}
+
+/* PERIOD TOGGLE */
+.period-toggle{display:flex;background:var(--bg2);border-radius:var(--rad-sm);padding:3px;margin-bottom:16px}
+.period-btn{flex:1;padding:8px;font-size:13px;font-weight:500;border:none;background:none;border-radius:7px;cursor:pointer;color:var(--t2);font-family:'DM Sans',sans-serif;transition:all .15s}
+.period-btn.active{background:var(--bg);color:var(--t1);font-weight:600}
+
+/* LOADING */
+#loading-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px}
+.spinner{width:32px;height:32px;border:2.5px solid var(--border2);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--bg);padding:11px 20px;border-radius:99px;font-size:14px;font-weight:500;z-index:500;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+</style>
+</head>
+<body>
+
+<div id="root">
+
+  <!-- LOADING -->
+  <div id="loading-screen">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--red);letter-spacing:2px">IronLog</div>
+    <div class="spinner"></div>
+  </div>
+
+  <!-- AUTH -->
+  <div id="auth-screen" style="display:none">
+    <div class="auth-logo">IronLog</div>
+    <div class="auth-tagline">Track every rep. Own every PR.</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Log in</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Sign up</button>
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <div id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="login-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="btn-auth" onclick="doLogin()">Log in</button>
+    </div>
+
+    <div id="signup-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Full name</label>
+        <input class="form-input" type="text" id="signup-name" placeholder="Alex Johnson" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="signup-pass" placeholder="Min 6 characters" autocomplete="new-password">
+      </div>
+      <button class="btn-auth" onclick="doSignup()">Create account</button>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app-screen">
+    <div class="app-content">
+
+      <!-- HOME -->
+      <div class="page active" id="page-home">
+        <div class="topbar">
+          <div class="topbar-logo">IronLog</div>
+          <div class="topbar-user">
+            <div class="avatar" id="user-avatar" onclick="showPage('profile')"></div>
+          </div>
+        </div>
+        <div style="padding:20px">
+          <div id="home-hero"></div>
+          <div class="sec-hdr">This week</div>
+          <div class="week-strip" id="week-strip"></div>
+          <div class="sec-hdr">Recent workouts</div>
+          <div id="recent-logs"></div>
+        </div>
+      </div>
+
+      <!-- WORKOUT -->
+      <div class="page" id="page-workout">
+        <div id="workout-content"></div>
+      </div>
+
+      <!-- PLANS -->
+      <div class="page" id="page-plans">
+        <div class="page-title">Plans</div>
+        <div class="page-sub">Tap a plan to make it active</div>
+        <div id="plans-list"></div>
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="page" id="page-progress">
+        <div class="page-title">Progress</div>
+        <div style="margin-bottom:16px"></div>
+        <div class="period-toggle">
+          <button class="period-btn active" onclick="setPeriod('week',this)">Week</button>
+          <button class="period-btn" onclick="setPeriod('month',this)">Month</button>
+          <button class="period-btn" onclick="setPeriod('all',this)">All time</button>
+        </div>
+        <div id="progress-content"></div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="page" id="page-profile">
+        <div class="page-title">Profile</div>
+        <div id="profile-content"></div>
+      </div>
+
+    </div>
+
+    <nav class="bottom-nav">
+      <button class="nav-btn active" onclick="showPage('home')" id="nav-home">
+        <div class="nav-icon">🏠</div>Home
+      </button>
+      <button class="nav-btn" onclick="showPage('workout')" id="nav-workout">
+        <div class="nav-icon">🏋️</div>Workout
+      </button>
+      <button class="nav-btn" onclick="showPage('plans')" id="nav-plans">
+        <div class="nav-icon">📋</div>Plans
+      </button>
+      <button class="nav-btn" onclick="showPage('progress')" id="nav-progress">
+        <div class="nav-icon">📈</div>Progress
+      </button>
+    </nav>
+  </div>
+
+  <!-- FINISH MODAL -->
+  <div class="overlay hidden" id="finish-modal">
+    <div class="modal">
+      <div class="modal-title">Log workout?</div>
+      <div id="finish-summary"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="closeFinish()">Cancel</button>
+        <button class="btn-primary" onclick="confirmLog()" style="flex:1">Save workout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const SUPABASE_URL = 'https://vtnhazqhqhpfocypsdhg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_X-yL-nZkHn_yt802I2tYrQ_AmPh8bQl';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const PLANS = [
+  {
+    id:'ppl',name:'Push / Pull / Legs',frequency:'6 days/week',
+    schedule:['Push','Pull','Legs','Push','Pull','Legs','Rest'],
+    days:{
+      Push:[
+        {name:'Barbell Bench Press',sets:4,reps:'8-10'},
+        {name:'Overhead Press',sets:3,reps:'8-10'},
+        {name:'Incline DB Press',sets:3,reps:'10-12'},
+        {name:'Cable Lateral Raise',sets:3,reps:'15-20'},
+        {name:'Tricep Pushdown',sets:3,reps:'12-15'},
+      ],
+      Pull:[
+        {name:'Pull-ups',sets:4,reps:'6-10'},
+        {name:'Barbell Row',sets:4,reps:'8-10'},
+        {name:'Cable Row',sets:3,reps:'10-12'},
+        {name:'Face Pulls',sets:3,reps:'15-20'},
+        {name:'Barbell Curl',sets:3,reps:'10-12'},
+      ],
+      Legs:[
+        {name:'Squat',sets:4,reps:'6-10'},
+        {name:'Romanian Deadlift',sets:3,reps:'8-12'},
+        {name:'Leg Press',sets:3,reps:'10-15'},
+        {name:'Leg Curl',sets:3,reps:'10-12'},
+        {name:'Calf Raise',sets:4,reps:'15-20'},
+      ]
+    }
+  },
+  {
+    id:'upper_lower',name:'Upper / Lower',frequency:'4 days/week',
+    schedule:['Upper','Lower','Rest','Upper','Lower','Rest','Rest'],
+    days:{
+      Upper:[
+        {name:'Bench Press',sets:4,reps:'6-8'},
+        {name:'Barbell Row',sets:4,reps:'6-8'},
+        {name:'Overhead Press',sets:3,reps:'8-10'},
+        {name:'Pull-ups',sets:3,reps:'8-10'},
+        {name:'Bicep Curl',sets:2,reps:'12-15'},
+        {name:'Tricep Extension',sets:2,reps:'12-15'},
+      ],
+      Lower:[
+        {name:'Squat',sets:4,reps:'6-8'},
+        {name:'Deadlift',sets:3,reps:'5-6'},
+        {name:'Bulgarian Split Squat',sets:3,reps:'8-10'},
+        {name:'Leg Curl',sets:3,reps:'10-12'},
+        {name:'Calf Raise',sets:4,reps:'15-20'},
+      ]
+    }
+  },
+  {
+    id:'fullbody',name:'Full Body 3x',frequency:'3 days/week',
+    schedule:['Full Body','Rest','Full Body','Rest','Full Body','Rest','Rest'],
+    days:{
+      'Full Body':[
+        {name:'Squat',sets:3,reps:'5-8'},
+        {name:'Bench Press',sets:3,reps:'5-8'},
+        {name:'Barbell Row',sets:3,reps:'5-8'},
+        {name:'Overhead Press',sets:2,reps:'8-10'},
+        {name:'Romanian Deadlift',sets:2,reps:'8-10'},
+        {name:'Pull-ups',sets:2,reps:'6-10'},
+      ]
+    }
+  }
+];
+
+// App state
+let user = null;
+let profile = { active_plan_id: 'ppl', full_name: '' };
+let lastWeights = {};
+let logs = [];
+let currentWorkout = null;
+let workoutTimer = null;
+let workoutSeconds = 0;
+let activeExData = [];
+let period = 'week';
+
+// Helpers
+function getPlan() { return PLANS.find(p => p.id === profile.active_plan_id) || PLANS[0]; }
+function getTodaySession() {
+  const plan = getPlan();
+  const wd = (new Date().getDay() + 6) % 7;
+  return plan.schedule[wd % plan.schedule.length];
+}
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-AU',{weekday:'short',month:'short',day:'numeric'}); }
+function fmtTime(s) { return Math.floor(s/60).toString().padStart(2,'0')+':'+Math.round(s%60).toString().padStart(2,'0'); }
+function initials(name) { return (name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('login-form').style.display = tab==='login' ? '' : 'none';
+  document.getElementById('signup-form').style.display = tab==='signup' ? '' : 'none';
+  showAuthError('');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.classList.toggle('show', !!msg);
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!email || !pass) { showAuthError('Please fill in all fields.'); return; }
+  const btn = event.target; btn.disabled = true; btn.textContent = 'Logging in…';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Log in';
+  if (error) showAuthError(error.message);
+}
+
+async function doSignup() {
+  const name = document.getElementById('signup-name').value.trim();
+  const email = document.getElementById('signup-email').value.trim();
+  const pass = document.getElementById('signup-pass').value;
+  if (!name || !email || !pass) { showAuthError('Please fill in all fields.'); return; }
+  if (pass.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  const btn = event.target; btn.disabled = true; btn.textContent = 'Creating account…';
+  const { error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: name } } });
+  btn.disabled = false; btn.textContent = 'Create account';
+  if (error) showAuthError(error.message);
+  else showAuthError('Check your email to confirm your account, then log in!');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+async function loadUserData(uid) {
+  // Load profile
+  const { data: prof } = await sb.from('profiles').select('*').eq('id', uid).single();
+  if (prof) profile = prof;
+
+  // Load last weights
+  const { data: lw } = await sb.from('last_weights').select('*').eq('user_id', uid);
+  if (lw) lw.forEach(r => lastWeights[r.exercise_name] = { sets: r.sets });
+
+  // Load logs (last 100)
+  const { data: lg } = await sb.from('workout_logs').select('*').eq('user_id', uid).order('logged_at', { ascending: false }).limit(100);
+  if (lg) logs = lg.map(r => ({
+    id: r.id,
+    date: r.logged_at,
+    session: r.session_name,
+    duration: r.duration_seconds,
+    totalVolume: r.total_volume,
+    exercises: r.exercises
+  }));
+}
+
+async function saveProfile(updates) {
+  profile = { ...profile, ...updates };
+  await sb.from('profiles').upsert({ id: user.id, ...profile });
+}
+
+async function saveLastWeight(exName, sets) {
+  lastWeights[exName] = { sets };
+  await sb.from('last_weights').upsert({ user_id: user.id, exercise_name: exName, sets, updated_at: new Date().toISOString() }, { onConflict: 'user_id,exercise_name' });
+}
+
+async function saveLog(log) {
+  const { data } = await sb.from('workout_logs').insert({
+    user_id: user.id,
+    session_name: log.session,
+    duration_seconds: log.duration,
+    total_volume: log.totalVolume,
+    exercises: log.exercises,
+    logged_at: new Date().toISOString()
+  }).select().single();
+  if (data) { log.id = data.id; log.date = data.logged_at; }
+  logs.unshift(log);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('active');
+  if (name==='home') renderHome();
+  if (name==='workout') renderWorkout();
+  if (name==='plans') renderPlans();
+  if (name==='progress') renderProgress();
+  if (name==='profile') renderProfile();
+}
+
+// ── HOME ──────────────────────────────────────────────────────────────────────
+function renderHome() {
+  const plan = getPlan();
+  const today = getTodaySession();
+
+  // Avatar
+  document.getElementById('user-avatar').textContent = initials(profile.full_name);
+
+  // Hero
+  const heroEl = document.getElementById('home-hero');
+  if (today === 'Rest') {
+    heroEl.innerHTML = `<div class="card" style="cursor:pointer;margin-bottom:20px" onclick="showPage('workout')">
+      <div style="font-weight:600;margin-bottom:4px">Rest day 💤</div>
+      <div style="font-size:13px;color:var(--t2)">Tap to pick a different session anyway.</div>
+    </div>`;
+  } else {
+    const exs = plan.days[today] || [];
+    heroEl.innerHTML = `<div class="hero-card" onclick="showPage('workout')">
+      <div class="hero-eyebrow">Today's workout</div>
+      <div class="hero-title">${today}</div>
+      <div class="hero-meta">${exs.length} exercises · ${plan.name}</div>
+      <button class="hero-btn">Start or pick session →</button>
+    </div>`;
+  }
+
+  // Week strip
+  const dayLabels = ['M','T','W','T','F','S','S'];
+  const todayWD = (new Date().getDay()+6)%7;
+  let ws = '';
+  for (let i=0;i<7;i++) {
+    const sess = plan.schedule[i % plan.schedule.length];
+    const isRest = sess === 'Rest';
+    const isToday = i === todayWD;
+    const hasLog = logs.some(l => {
+      const d = new Date(l.date); const lwd = (d.getDay()+6)%7;
+      return lwd===i && (Date.now()-d.getTime())<7*86400000;
+    });
+    const cls = isToday ? 'is-today' : hasLog ? 'is-done' : isRest ? 'is-rest' : '';
+    ws += `<div class="week-day"><div class="week-day-label">${dayLabels[i]}</div>
+      <div class="week-day-dot ${cls}">${isRest ? '·' : sess.substring(0,2)}</div></div>`;
+  }
+  document.getElementById('week-strip').innerHTML = ws;
+
+  // Recent
+  const recent = logs.slice(0, 4);
+  document.getElementById('recent-logs').innerHTML = recent.length
+    ? `<div class="card">${recent.map(l=>`<div class="log-row">
+        <div class="log-icon-wrap">🏋️</div>
+        <div style="flex:1"><div class="log-name">${l.session}</div><div class="log-meta">${fmtDate(l.date)} · ${fmtTime(l.duration)}</div></div>
+        <div class="log-vol">${(Math.round(l.totalVolume/100)/10)}t</div>
+      </div>`).join('')}</div>`
+    : `<div style="font-size:14px;color:var(--t2);padding:4px 0">No workouts yet — let's get started!</div>`;
+}
+
+// ── WORKOUT ───────────────────────────────────────────────────────────────────
+function renderWorkout() {
+  if (currentWorkout) { renderActiveWorkout(); return; }
+  const plan = getPlan();
+  const today = getTodaySession();
+  const sessionNames = Object.keys(plan.days);
+  const el = document.getElementById('workout-content');
+
+  const tiles = sessionNames.map(name => {
+    const exs = plan.days[name];
+    const isToday = name === today;
+    const lastLog = logs.find(l => l.session === name);
+    return `<div class="session-tile ${isToday?'suggested':''}" onclick="startWorkoutSession('${plan.id}','${name}')">
+      ${isToday ? `<div class="session-badge">TODAY</div><br>` : ''}
+      <div class="session-name">${name}</div>
+      <div class="session-meta">${exs.length} exercises</div>
+      <div class="session-meta" style="margin-top:3px">Last: ${lastLog ? fmtDate(lastLog.date) : 'Never'}</div>
+    </div>`;
+  }).join('');
+
+  const preview = sessionNames.map(name => {
+    const exs = plan.days[name];
+    return `<div class="sec-hdr" style="margin-top:20px">${name}</div>
+    <div class="card card-sm">${exs.map(e=>`<div class="ex-preview-row">
+      <span>${e.name}</span>
+      <span class="ex-preview-last">${e.sets}×${e.reps}${lastWeights[e.name] ? ' · '+lastWeights[e.name].sets[0].weight+'kg' : ''}</span>
+    </div>`).join('')}</div>`;
+  }).join('');
+
+  el.innerHTML = `<div style="padding:20px">
+    <div class="page-title">Choose session</div>
+    <div class="page-sub">${plan.name}</div>
+    <div class="session-grid">${tiles}</div>
+    ${preview}
+  </div>`;
+}
+
+function getLastStr(name) {
+  const w = lastWeights[name];
+  return w ? w.sets.map(s=>s.weight+'kg×'+s.reps).join(', ') : null;
+}
+
+function startWorkoutSession(planId, dayName) {
+  const plan = PLANS.find(p=>p.id===planId);
+  const exs = plan.days[dayName];
+  activeExData = exs.map(e => {
+    const last = lastWeights[e.name];
+    return {
+      name: e.name,
+      sets: Array.from({length:e.sets},(_,i)=>({
+        weight: last ? (last.sets[Math.min(i,last.sets.length-1)].weight||'') : '',
+        reps: last ? (last.sets[Math.min(i,last.sets.length-1)].reps||e.reps.split('-')[0]) : e.reps.split('-')[0],
+        done: false
+      }))
+    };
+  });
+  currentWorkout = { planId, dayName, startTime: Date.now() };
+  workoutSeconds = 0;
+  clearInterval(workoutTimer);
+  workoutTimer = setInterval(()=>{
+    workoutSeconds++;
+    const el = document.getElementById('timer-el');
+    if (el) el.textContent = fmtTime(workoutSeconds);
+  }, 1000);
+  showPage('workout');
+}
+
+function renderActiveWorkout() {
+  const el = document.getElementById('workout-content');
+  el.innerHTML = `
+    <div class="workout-bar">
+      <div>
+        <div class="workout-bar-title">${currentWorkout.dayName}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7)">${activeExData.length} exercises</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="workout-timer" id="timer-el">${fmtTime(workoutSeconds)}</div>
+        <button class="workout-cancel" onclick="cancelWorkout()">Cancel</button>
+      </div>
+    </div>
+    <div style="padding:16px">
+    ${activeExData.map((ex,ei)=>`
+      <div class="ex-card">
+        <div class="ex-title">${ex.name}</div>
+        <div class="sets-grid">
+          <div class="sets-hdr">Set</div><div class="sets-hdr">kg</div><div class="sets-hdr">Reps</div><div></div>
+          ${ex.sets.map((s,si)=>`
+            <div class="set-num">${si+1}</div>
+            <input class="set-input" type="number" placeholder="0" value="${s.weight}" step="0.5" min="0"
+              oninput="updateSet(${ei},${si},'weight',this.value)">
+            <input class="set-input" type="number" placeholder="0" value="${s.reps}" step="1" min="0"
+              oninput="updateSet(${ei},${si},'reps',this.value)">
+            <button class="set-check ${s.done?'done':''}" onclick="toggleSet(${ei},${si})">✓</button>
+          `).join('')}
+        </div>
+        ${getLastStr(ex.name) ? `<div class="last-used">Last used: ${getLastStr(ex.name)}</div>` : ''}
+      </div>`).join('')}
+    <button class="btn-primary" onclick="openFinish()">✓ Finish workout</button>
+    <div style="height:8px"></div>
+    </div>`;
+}
+
+function updateSet(ei,si,field,val) { activeExData[ei].sets[si][field] = val; }
+
+function toggleSet(ei,si) {
+  activeExData[ei].sets[si].done = !activeExData[ei].sets[si].done;
+  renderActiveWorkout();
+}
+
+function cancelWorkout() {
+  if (!confirm('Cancel this workout? Progress will be lost.')) return;
+  clearInterval(workoutTimer); currentWorkout = null;
+  renderWorkout();
+}
+
+function openFinish() {
+  const done = activeExData.flatMap(e=>e.sets.filter(s=>s.done));
+  const vol = done.reduce((s,x)=>s+(parseFloat(x.weight)||0)*(parseInt(x.reps)||0),0);
+  document.getElementById('finish-summary').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-lbl">Duration</div><div class="stat-val">${fmtTime(workoutSeconds)}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Volume</div><div class="stat-val">${Math.round(vol)}kg</div></div>
+      <div class="stat-card"><div class="stat-lbl">Exercises</div><div class="stat-val">${activeExData.length}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Sets done</div><div class="stat-val">${done.length}</div></div>
+    </div>`;
+  document.getElementById('finish-modal').classList.remove('hidden');
+}
+
+function closeFinish() { document.getElementById('finish-modal').classList.add('hidden'); }
+
+async function confirmLog() {
+  closeFinish();
+  const done = activeExData.flatMap(e=>e.sets.filter(s=>s.done));
+  const vol = done.reduce((s,x)=>s+(parseFloat(x.weight)||0)*(parseInt(x.reps)||0),0);
+
+  // Save last weights per exercise
+  for (const ex of activeExData) {
+    const doneSets = ex.sets.filter(s=>s.done);
+    if (doneSets.length) {
+      await saveLastWeight(ex.name, doneSets.map(s=>({ weight:parseFloat(s.weight)||0, reps:parseInt(s.reps)||0 })));
+    }
+  }
+
+  await saveLog({
+    session: currentWorkout.dayName,
+    duration: workoutSeconds,
+    totalVolume: vol,
+    exercises: activeExData.map(e=>({ name:e.name, sets:e.sets.filter(s=>s.done) })).filter(e=>e.sets.length)
+  });
+
+  clearInterval(workoutTimer); currentWorkout = null;
+  showToast('Workout saved! 💪');
+  showPage('home');
+}
+
+// ── PLANS ─────────────────────────────────────────────────────────────────────
+function renderPlans() {
+  document.getElementById('plans-list').innerHTML = PLANS.map(p=>`
+    <div class="card plan-card ${p.id===profile.active_plan_id?'is-active':''}" onclick="selectPlan('${p.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+        <div class="plan-name">${p.name}</div>
+        ${p.id===profile.active_plan_id?'<span style="background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px">Active</span>':''}
+      </div>
+      <div class="plan-freq">${p.frequency}</div>
+      <div class="plan-pills">${p.schedule.map(d=>`<span class="plan-pill ${d==='Rest'?'rest':''}">${d}</span>`).join('')}</div>
+      <div class="plan-day-detail">${Object.entries(p.days).map(([dn,exs])=>`
+        <div class="plan-day-name">${dn}</div>
+        <div class="plan-exs">${exs.map(e=>e.name).join(' · ')}</div>
+      `).join('')}</div>
+    </div>`).join('');
+}
+
+async function selectPlan(id) {
+  await saveProfile({ active_plan_id: id });
+  renderPlans();
+  showToast('Plan updated!');
+}
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function setPeriod(p, btn) {
+  period = p;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProgress();
+}
+
+function renderProgress() {
+  const now = Date.now();
+  const cutoffs = { week:7, month:30, all:9999 };
+  const days = cutoffs[period];
+  const filtered = logs.filter(l=>(now-new Date(l.date).getTime())<days*86400000);
+  const totalVol = filtered.reduce((s,l)=>s+Number(l.totalVolume),0);
+  const totalSets = filtered.reduce((s,l)=>s+l.exercises.reduce((ss,e)=>ss+e.sets.length,0),0);
+  const avgDur = filtered.length ? Math.round(filtered.reduce((s,l)=>s+l.duration,0)/filtered.length) : 0;
+
+  const n = Math.min(days===9999?14:days,14);
+  const barData = [];
+  for (let i=n-1;i>=0;i--) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const dStr = d.toDateString();
+    const vol = filtered.filter(l=>new Date(l.date).toDateString()===dStr).reduce((s,l)=>s+Number(l.totalVolume),0);
+    barData.push({ label:n<=7?['M','T','W','T','F','S','S'][(d.getDay()+6)%7]:d.getDate(), vol, isToday:i===0 });
+  }
+  const maxVol = Math.max(...barData.map(b=>b.vol),1);
+
+  const exNames = [...new Set(logs.flatMap(l=>l.exercises.map(e=>e.name)))];
+  const prCards = exNames.slice(0,8).map(name=>{
+    const allSets = filtered.flatMap(l=>l.exercises.filter(e=>e.name===name).flatMap(e=>e.sets));
+    if (!allSets.length) return '';
+    const maxW = Math.max(...allSets.map(s=>s.weight||0));
+    const last = lastWeights[name];
+    const lastW = last ? Math.max(...last.sets.map(s=>s.weight)) : 0;
+    return `<div class="pr-card">
+      <div class="pr-name">${name}<span class="pr-badge">🏆 ${maxW}kg</span></div>
+      <div class="pr-meta">Last: ${lastW?lastW+'kg':'–'} · ${allSets.length} sets logged</div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  document.getElementById('progress-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-lbl">Workouts</div><div class="stat-val">${filtered.length}</div><div class="stat-sub">${period==='week'?'this week':period==='month'?'this month':'total'}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Volume</div><div class="stat-val">${(Math.round(totalVol/100)/10)}t</div><div class="stat-sub">tonnes lifted</div></div>
+      <div class="stat-card"><div class="stat-lbl">Sets</div><div class="stat-val">${totalSets}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Avg time</div><div class="stat-val" style="font-size:22px">${avgDur?fmtTime(avgDur):'–'}</div></div>
+    </div>
+    <div class="bar-wrap">
+      <div class="bar-title">Volume per day</div>
+      <div class="bars">${barData.map(b=>{
+        const h=Math.max(3,Math.round((b.vol/maxVol)*68));
+        return `<div class="b-col"><div class="b-bar ${b.isToday?'today':''}" style="height:${h}px"></div><div class="b-lbl">${b.label}</div></div>`;
+      }).join('')}</div>
+    </div>
+    ${prCards?`<div class="sec-hdr">Exercise records</div>${prCards}`:''}
+    ${filtered.length?`<div class="sec-hdr">History</div>
+    <div class="card">${[...filtered].map(l=>`<div class="log-row">
+      <div class="log-icon-wrap">🏋️</div>
+      <div style="flex:1"><div class="log-name">${l.session}</div><div class="log-meta">${fmtDate(l.date)} · ${fmtTime(l.duration)}</div></div>
+      <div class="log-vol">${Math.round(l.totalVolume)}kg</div>
+    </div>`).join('')}</div>`:''}`;
+}
+
+// ── PROFILE ───────────────────────────────────────────────────────────────────
+function renderProfile() {
+  document.getElementById('profile-content').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;padding:20px 0 24px">
+      <div class="profile-avatar">${initials(profile.full_name)}</div>
+      <div style="font-size:20px;font-weight:600;margin-bottom:3px">${profile.full_name || 'Athlete'}</div>
+      <div style="font-size:14px;color:var(--t2)">${user.email}</div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px">Stats</div>
+    <div class="stat-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-lbl">Workouts</div><div class="stat-val">${logs.length}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Volume</div><div class="stat-val">${(Math.round(logs.reduce((s,l)=>s+Number(l.totalVolume),0)/100)/10)}t</div></div>
+    </div>
+    <button class="btn-outline btn-danger" onclick="doLogout()">Sign out</button>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function boot(session) {
+  if (!session) {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
+    return;
+  }
+  user = session.user;
+  await loadUserData(user.id);
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').classList.add('visible');
+  renderHome();
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN') {
+    user = session.user;
+    await loadUserData(user.id);
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('app-screen').classList.add('visible');
+    showPage('home');
+  }
+  if (event === 'SIGNED_OUT') {
+    user = null; profile = { active_plan_id:'ppl', full_name:'' };
+    lastWeights = {}; logs = []; currentWorkout = null;
+    clearInterval(workoutTimer);
+    document.getElementById('app-screen').classList.remove('visible');
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+});
+
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  boot(session);
+})();
+</script>
+</body>
+</html>
